@@ -1,0 +1,39 @@
+# Optional: docker compose up
+services:
+  mongo:
+    image: mongo:7
+    ports: ["27017:27017"]
+    volumes: ["mongo-data:/data/db"]
+
+  image-service:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes: ["./image-service:/app"]
+    command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000"
+    ports: ["8000:8000"]
+
+  backend:
+    image: node:20
+    working_dir: /app
+    volumes: ["./backend:/app"]
+    environment:
+      MONGO_URI: mongodb://mongo:27017/photoeditor
+      PYTHON_URL: http://image-service:8000
+      JWT_SECRET: change-me
+      CLIENT_URL: http://localhost:3000
+    command: sh -c "npm install && node server.js"
+    ports: ["5000:5000"]
+    depends_on: [mongo, image-service]
+
+  frontend:
+    image: node:20
+    working_dir: /app
+    volumes: ["./frontend:/app"]
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:5000
+    command: sh -c "npm install && npm run dev"
+    ports: ["3000:3000"]
+    depends_on: [backend]
+
+volumes:
+  mongo-data:
