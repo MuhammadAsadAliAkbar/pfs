@@ -63,7 +63,7 @@ FILTERS = {
 }
 
 
-@app.get("/health")
+@app.get("/")
 def health():
     return {"ok": True, "filters": sorted(FILTERS)}
 
