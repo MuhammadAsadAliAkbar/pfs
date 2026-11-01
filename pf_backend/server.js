@@ -4,13 +4,14 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 
 const app = express();
-app.use(cors({ origin: process.env.CLIENT_URL }));
+app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:3000" }));
 app.use(express.json({ limit: "100mb" }));
 
 app.get("/", (_, res) => res.json({ ok: true }));
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/projects", require("./routes/projects"));
 app.use("/api/image", require("./routes/image"));
+app.use("/api/ai", require("./routes/ai"));
 
 const PORT = process.env.PORT || 5000;
 mongoose
