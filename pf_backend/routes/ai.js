@@ -2,9 +2,8 @@ const express = require("express");
 const router = express.Router();
 const axios = require("axios");
 const auth = require("../middleware/auth");
+const Image = require("../models/Image");
 
-
-// POST: Generate AI Image
 router.post("/generate", async (req, res) => {
   try {
     const {
@@ -107,15 +106,27 @@ router.post("/generate", async (req, res) => {
 
     const dataUrl = `data:${contentType};base64,${base64}`;
 
-    // 11. Success response
+    // ========== 11. Save to MongoDB ==========
+    const savedImage = await Image.create({
+      prompt: cleanPrompt,
+      width: w,
+      height: h,
+      seed: randomSeed,
+      image: dataUrl,
+      contentType,
+    });
+
+    // 12. Success response
     return res.status(200).json({
       success: true,
-      message: "Image generated successfully",
+      message: "Image generated and saved successfully",
+      _id: savedImage._id,
       image: dataUrl,
       width: w,
       height: h,
       seed: randomSeed,
       prompt: cleanPrompt,
+      createdAt: savedImage.createdAt,
     });
 
   } catch (err) {
