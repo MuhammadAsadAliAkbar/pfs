@@ -199,6 +199,10 @@ export default function Editor() {
   const [tab, setTab] = useState("layers");
   const [auth, setAuth] = useState({ email: "", password: "", name: "" });
 
+  // AI Generator state
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+
   const [selection, setSelection] = useState(null);
   const cloneSrc = useRef(null);
   const pathPts = useRef([]);
@@ -454,6 +458,52 @@ export default function Editor() {
     }
   };
 
+  /* ========== AI IMAGE GENERATOR ========== */
+  const generateAI = async () => {
+    if (!aiPrompt.trim()) {
+      setMsg("Pehle prompt likho");
+      return;
+    }
+    setAiLoading(true);
+    setMsg("AI image generate ho rahi hai…");
+    try {
+      // Backend endpoint expected: POST /api/ai/generate  { prompt, width, height }
+      // Response: { image: "data:image/png;base64,..." }  or  { image: "https://..." }
+      const r = await api.generate({
+        prompt: aiPrompt.trim(),
+        width: size.w,
+        height: size.h,
+      });
+
+      const img = await loadImg(r.image);
+      pushAll();
+
+      const l = newLayer(size.w, size.h, "AI: " + aiPrompt.trim().slice(0, 22));
+      // Fit the generated image into the canvas (contain)
+      const scale = Math.min(size.w / img.width, size.h / img.height);
+      const dw = img.width * scale;
+      const dh = img.height * scale;
+      ctxOf(l.canvas).drawImage(
+        img,
+        (size.w - dw) / 2,
+        (size.h - dh) / 2,
+        dw,
+        dh
+      );
+
+      layersRef.current.push(l);
+      setActiveId(l.id);
+      render();
+      bump();
+      setMsg("AI image add ho gayi ✓");
+      setTimeout(() => setMsg(""), 1800);
+    } catch (e) {
+      setMsg(e.message || "AI generate fail ho gaya");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   /* account / projects */
   const refreshProjects = () => api.projects().then(setProjects).catch(() => {});
   const doAuth = async (mode) => {
@@ -621,13 +671,11 @@ export default function Editor() {
       return;
     }
 
-    // Zoom In
     if (tool === "zoomin") {
       setZoom((z) => Math.min(4, +(z + 0.15).toFixed(2)));
       return;
     }
 
-    // Zoom Out
     if (tool === "zoomout") {
       setZoom((z) => Math.max(0.1, +(z - 0.15).toFixed(2)));
       return;
@@ -915,7 +963,7 @@ export default function Editor() {
       </header>
 
       <div className="body">
-        {/* ===== LEFT SIDEBAR – Tools (Left → Right wrap) ===== */}
+        {/* ===== LEFT SIDEBAR – Tools ===== */}
         <aside className="tools">
           {TOOLS.map(([id, icon, tip]) => (
             <button
@@ -986,7 +1034,7 @@ export default function Editor() {
         {/* Right Panel */}
         <aside className="panel">
           <div className="tabs">
-            {["layers", "adjust", "filters", "projects", "account"].map((t) => (
+            {["layers", "adjust", "filters", "ai", "projects", "account"].map((t) => (
               <button
                 key={t}
                 className={tab === t ? "on" : ""}
@@ -1072,6 +1120,55 @@ export default function Editor() {
                   <button key={id} onClick={() => serverFilter(id)}>{label}</button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* ========== NEW AI TAB ========== */}
+          {tab === "ai" && (
+            <div className="pane">
+              <h4>AI Image Generator</h4>
+              <p style={{ fontSize: 12, opacity: 0.75, marginBottom: 10 }}>
+                Prompt likho → Generate dabao → naya layer ban jayega
+              </p>
+
+              <textarea
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="e.g. cinematic portrait of a cyberpunk girl, neon lights, 8k..."
+                rows={4}
+                style={{
+                  width: "100%",
+                  resize: "vertical",
+                  background: "#1a1a1a",
+                  border: "1px solid #333",
+                  color: "#eee",
+                  padding: "8px 10px",
+                  borderRadius: 6,
+                  fontSize: 13,
+                  marginBottom: 12,
+                }}
+              />
+
+              <button
+                onClick={generateAI}
+                disabled={aiLoading}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  background: aiLoading ? "#444" : "#e11d48",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 6,
+                  fontWeight: 600,
+                  cursor: aiLoading ? "not-allowed" : "pointer",
+                }}
+              >
+                {aiLoading ? "Generating…" : "✨ Generate AI Image"}
+              </button>
+
+              <p style={{ fontSize: 11, opacity: 0.6, marginTop: 12 }}>
+                Image current canvas size ({size.w}×{size.h}) me fit hogi aur naye layer ke roop me add hogi.
+              </p>
             </div>
           )}
 

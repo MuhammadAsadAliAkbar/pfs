@@ -29,4 +29,11 @@ export const api = {
   create: (b) => req("/projects", { method: "POST", body: b }),
   update: (id, b) => req("/projects/" + id, { method: "PUT", body: b }),
   remove: (id) => req("/projects/" + id, { method: "DELETE" }),
+
+  // ========== AI Image Generator ==========
+  generate: ({ prompt, width, height }) =>
+    req("/ai/generate", {
+      method: "POST",
+      body: { prompt, width, height },
+    }),
 };
