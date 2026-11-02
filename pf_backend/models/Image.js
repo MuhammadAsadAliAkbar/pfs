@@ -27,6 +27,10 @@ const imageSchema = new mongoose.Schema(
       type: String,
       default: "image/jpeg",
     },
+
+    referenceImage: { type: String, default: null },
+    referenceContentType: { type: String, default: null },
+    referenceFileName: { type: String, default: null },
   },
   { timestamps: true }
 );

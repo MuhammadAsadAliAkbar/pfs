@@ -198,6 +198,7 @@ export default function Editor() {
   const [msg, setMsg] = useState("");
   const [tab, setTab] = useState("layers");
   const [auth, setAuth] = useState({ email: "", password: "", name: "" });
+const [referenceFile, setReferenceFile] = useState(null);
 
   // AI Generator state
   const [aiPrompt, setAiPrompt] = useState("");
@@ -469,6 +470,7 @@ export default function Editor() {
     try {
       // Backend endpoint expected: POST /api/ai/generate  { prompt, width, height }
       // Response: { image: "data:image/png;base64,..." }  or  { image: "https://..." }
+      
       const r = await api.generate({
         prompt: aiPrompt.trim(),
         width: size.w,
